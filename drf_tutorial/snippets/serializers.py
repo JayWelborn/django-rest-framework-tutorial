@@ -1,4 +1,7 @@
+from django.contrib.auth.models import User
+
 from rest_framework import serializers
+
 from .models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
 
 
@@ -18,8 +21,28 @@ class SnippetSerializer(serializers.ModelSerializer):
         linenos(BooleanField): should the output display line numbers?
         language(CharField): language for highlighting. default is python.
         style(CharField): how to display code. defaults to friendly
+        owner(ReadOnlyField): creator of the code snippet
     """
+    owner = serializers.ReadOnlyField(source='owner.username')
     
     class Meta:
         model = Snippet
-        fields = ('id', 'title', 'code', 'linenos', 'language', 'style')
+        fields = ('id', 'title', 'code', 'linenos', 'language', 'style', 
+                  'owner')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Users.
+
+    Fields:
+        id: pk of user
+        username: user's username
+        snippets: list of snippets associated with user
+    """
+    snippets = serializers.PrimaryKeyRelatedField(many=True,
+                                                  queryset=Snippet.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'snippets')

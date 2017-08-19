@@ -2,7 +2,9 @@
 from django.db import models
 
 # 3rd-party imports
-from pygments.lexers import get_all_lexers
+from pygments import highlight
+from pygments.formatters.html import HtmlFormatter
+from pygments.lexers import get_all_lexers, get_lexer_by_name
 from pygments.styles import get_all_styles
 
 # define pygment stuff
@@ -23,6 +25,8 @@ class Snippet(models.Model):
         linenos(BooleanField): should the output display line numbers?
         language(CharField): language for highlighting. default is python.
         style(CharField): how to display code. defaults to friendly.
+        owner(ForeignKey): creator of the snippet
+        highlighted(TextField): highlighted HTML representation of the code
     """
 
     created = models.DateTimeField(auto_now_add=True)
@@ -36,7 +40,25 @@ class Snippet(models.Model):
                              default='friendly', 
                              max_length=100)
 
+    owner = models.ForeignKey('auth.User',
+                              related_name='snippets',
+                              on_delete=models.CASCADE)
+    highlighted = models.TextField()
+
     class Meta:
         ordering = ('created',)
+
+    def save(self, *args, **kwargs):
+        """
+        Use the `pygments` library to create a highlighted HTML
+        representation of the code snippet.
+        """
+        lexer = get_lexer_by_name(self.language)
+        linenos = self.linenos and 'table' or False
+        options = self.title and {'title': self.title} or {}
+        formatter = HtmlFormatter(style=self.style, linenos = linenos,
+                                  full=True, **options)
+        self.highlighted = highlight(self.code, lexer, formatter)
+        super(Snippet, self).save(*args, **kwargs)
         
             
