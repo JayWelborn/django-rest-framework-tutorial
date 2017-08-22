@@ -1,10 +1,39 @@
 from django.contrib.auth.models import User
 
-from rest_framework import mixins, generics, permissions
+from rest_framework import mixins, generics, permissions, renderers
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from .models import Snippet
 from .serializers import SnippetSerializer, UserSerializer
 from .permissions import IsOwnerOrReadOnly
+
+@api_view(['GET'])
+def api_root(request, format=None):
+    """
+    Root view for Snippets API.
+    Returns list users and snippets for display at a
+    base app URL
+    """
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'snippets': reverse('snippet-list', request=request, format=format)
+        })
+
+
+class SnippetHighlight(generics.GenericAPIView):
+    """
+    View for rendering highlighted snippets as HTML.
+    Returns `highlight` property from instance rather than a representation of
+    the instance itself.
+    """
+    queryset = Snippet.objects.all()
+    renderer_calsses = (renderers.StaticHTMLRenderer,)
+
+    def get(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
 
 
 class SnippetList(generics.ListCreateAPIView):
