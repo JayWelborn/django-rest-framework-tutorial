@@ -29,3 +29,4 @@ drfenv/
 
 # local DB
 myblog.sqlite3
+db.sqlite3
