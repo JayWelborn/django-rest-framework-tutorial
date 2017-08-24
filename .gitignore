@@ -29,4 +29,4 @@ drfenv/
 
 # local DB
 myblog.sqlite3
-*.sqlite3
+drf_tutorial/db.sqlite3
